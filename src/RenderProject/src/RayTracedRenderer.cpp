@@ -2,8 +2,8 @@
 #include <glm/glm.hpp>
 
 RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 rayDirection){
-    //initialised placeholder variable, change if values prevent function from running
-    RayTriangleIntersection output(glm::vec3(0,0,0), 9999999, ModelTriangle(), 0);
+    
+    std::vector<RayTriangleIntersection> output;
 
     for (int i = 0; i<triangles.size(); i++) {
         glm::vec3 e0 = triangles[i].vertices[1] - triangles[i].vertices[0];
@@ -11,20 +11,30 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 rayD
         glm::vec3 SPVector = cameraPosition - triangles[i].vertices[0];
         glm::mat3 DEMatrix(-rayDirection, e0, e1);
         glm::vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
-        if (((possibleSolution[1] >= 0.0) && (possibleSolution[1]  <= 1.0)) &&
-            ((possibleSolution[2]  >= 0.0) && (possibleSolution[2] <= 1.0)) &&
-            ((possibleSolution[1]  + possibleSolution[2]) <= 1.0) && 
-            (possibleSolution[0] < output.distanceFromCamera) &&
-            (possibleSolution[0] >= 0)){
-                output = RayTriangleIntersection(
+        if (output.size() == 0){
+            output.push_back(RayTriangleIntersection(
                             (cameraPosition + possibleSolution[0]*rayDirection), 
                             possibleSolution[0],
                             triangles[i],
-            i);
+                            i));
+        } else if (((possibleSolution[1] >= 0.0) && (possibleSolution[1]  <= 1.0)) &&
+            ((possibleSolution[2]  >= 0.0) && (possibleSolution[2] <= 1.0)) &&
+            ((possibleSolution[1]  + possibleSolution[2]) <= 1.0) && 
+            (possibleSolution[0] < output[output.size()-1].distanceFromCamera) &&
+            (possibleSolution[0] >= 0)){
+                output.push_back(RayTriangleIntersection(
+                            (cameraPosition + possibleSolution[0]*rayDirection), 
+                            possibleSolution[0],
+                            triangles[i],
+                            i));
         }
     }
 
-    return output;
+    if (output.size() == 0) {
+        return RayTriangleIntersection(glm::vec3(0), -1, ModelTriangle(glm::vec3(0), glm::vec3(0), glm::vec3(0), Colour(0,0,0)), -1);
+    } else {
+        return output[output.size()-1];
+    }
 }
 
 void RayTracedRenderer::draw(DrawingWindow &window) {
