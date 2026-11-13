@@ -17,7 +17,7 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 star
             ((possibleSolution[2]  >= 0.0) && (possibleSolution[2] <= 1.0)) &&
             ((possibleSolution[1]  + possibleSolution[2]) <= 1.0) && 
             (possibleSolution[0] < output.distanceFromCamera) &&
-            (possibleSolution[0] >= 0)){
+            (possibleSolution[0] > 0)){
                 output = RayTriangleIntersection(
                             (startingPoint + possibleSolution[0]*rayDirection), 
                             possibleSolution[0],
@@ -46,11 +46,10 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
 
             RayTriangleIntersection targetTriangle = getClosestIntersection(cameraPosition, rayDirection);
             if (targetTriangle.triangleIndex != -1) {
-                RayTriangleIntersection lightIntersection = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(lightPosition - targetTriangle.intersectionPoint));
-                Colour c;
-                if (lightIntersection.triangleIndex = -1) {
-                    c = targetTriangle.intersectedTriangle.colour;
-                } else {
+                glm::vec3 pointToLight = lightPosition - targetTriangle.intersectionPoint;
+                RayTriangleIntersection lightIntersection = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
+                Colour c = targetTriangle.intersectedTriangle.colour;
+                if ((lightIntersection.triangleIndex != -1) && (lightIntersection.distanceFromCamera < pointToLight.length())) {
                     c = Colour(0,0,0);
                 }
 
