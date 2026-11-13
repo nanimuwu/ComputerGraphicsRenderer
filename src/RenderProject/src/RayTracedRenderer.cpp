@@ -17,7 +17,7 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 star
             ((possibleSolution[2]  >= 0.0) && (possibleSolution[2] <= 1.0)) &&
             ((possibleSolution[1]  + possibleSolution[2]) <= 1.0) && 
             (possibleSolution[0] < output.distanceFromCamera) &&
-            (possibleSolution[0] > 0)){
+            (possibleSolution[0] > 0.0001f)){
                 output = RayTriangleIntersection(
                             (startingPoint + possibleSolution[0]*rayDirection), 
                             possibleSolution[0],
