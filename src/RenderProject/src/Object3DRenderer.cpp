@@ -194,7 +194,7 @@ void Object3DRenderer::draw(DrawingWindow &window) {
         for (int i = 0; i < triangles.size();i++) {
             CanvasTriangle targetTriangle;
             for (int j = 0; j <= 2; j++) {
-                CanvasPoint projectedVertex = projectVertexOntoCanvasPoint(cameraPosition, focalLength, triangles[i].vertices[j] * cameraOrientation);
+                CanvasPoint projectedVertex = projectVertexOntoCanvasPoint(cameraPosition, focalLength, triangles[i].vertices[j]);
                 glm::vec3 cameraVertex(projectedVertex.x*imagePlaneScaling+xCameraOffset, window.height-(projectedVertex.y*imagePlaneScaling+yCameraOffset), projectedVertex.depth);
                 glm::vec3 targetVertex(cameraVertex);
                 targetTriangle[j] = CanvasPoint(targetVertex.x, targetVertex.y, targetVertex.z);
