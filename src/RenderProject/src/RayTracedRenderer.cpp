@@ -1,7 +1,7 @@
 #include "RayTracedRenderer.h"
 #include <glm/glm.hpp>
 
-RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 rayDirection){
+RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 startingPoint, glm::vec3 rayDirection){
     
     RayTriangleIntersection output; output.distanceFromCamera = std::numeric_limits<float>::infinity();
     bool found = false;
@@ -9,7 +9,7 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 rayD
     for (int i = 0; i<triangles.size(); i++) {
         glm::vec3 e0 = triangles[i].vertices[1] - triangles[i].vertices[0];
         glm::vec3 e1 = triangles[i].vertices[2] - triangles[i].vertices[0];
-        glm::vec3 SPVector = cameraPosition - triangles[i].vertices[0];
+        glm::vec3 SPVector = startingPoint - triangles[i].vertices[0];
         glm::mat3 DEMatrix(-rayDirection, e0, e1);
         glm::vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
         
@@ -19,7 +19,7 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 rayD
             (possibleSolution[0] < output.distanceFromCamera) &&
             (possibleSolution[0] >= 0)){
                 output = RayTriangleIntersection(
-                            (cameraPosition + possibleSolution[0]*rayDirection), 
+                            (startingPoint + possibleSolution[0]*rayDirection), 
                             possibleSolution[0],
                             triangles[i],
                             i);
@@ -36,19 +36,26 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 rayD
 }
 
 void RayTracedRenderer::draw(DrawingWindow &window) {
-    for (int py = 0; py < window.height; py++) {
-        for (int px = 0; px < window.width; px++) {
-            float u = ((px + 0.5f) - window.width  / 2.0f) / imagePlaneScaling;
-            float v = (window.height / 2.0f - (py + 0.5f)) / imagePlaneScaling;
+    for (int y = 0; y < window.height; y++) {
+        for (int x = 0; x < window.width; x++) {
+            float u = ((x + 0.5f) - window.width  / 2.0f) / imagePlaneScaling;
+            float v = (window.height / 2.0f - (y + 0.5f)) / imagePlaneScaling;
 
             glm::vec3 camDir(u, v, -focalLength);
             glm::vec3 rayDirection = glm::normalize(cameraOrientation * camDir);
 
-            RayTriangleIntersection hit = getClosestIntersection(rayDirection);
-            if (hit.triangleIndex != -1) {   // check your struct's member name
-                Colour c = hit.intersectedTriangle.colour;
+            RayTriangleIntersection targetTriangle = getClosestIntersection(cameraPosition, rayDirection);
+            if (targetTriangle.triangleIndex != -1) {
+                RayTriangleIntersection lightIntersection = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(lightPosition - targetTriangle.intersectionPoint));
+                Colour c;
+                if (lightIntersection.triangleIndex = -1) {
+                    c = targetTriangle.intersectedTriangle.colour;
+                } else {
+                    c = Colour(0,0,0);
+                }
+
                 uint32_t colour = (255 << 24) + (c.red << 16) + (c.green << 8) + c.blue;
-                window.setPixelColour(px, py, colour);
+                window.setPixelColour(x, y, colour);
             }
         }
     }
