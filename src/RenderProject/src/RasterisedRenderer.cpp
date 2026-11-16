@@ -3,6 +3,7 @@
 #include <CanvasPoint.h>
 #include <Colour.h>
 #include <CanvasTriangle.h>
+#include <algorithm>
 
 float pythagoras(CanvasPoint a, CanvasPoint b){
     float xDiff = a.x - b.x;

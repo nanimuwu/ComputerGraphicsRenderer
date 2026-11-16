@@ -6,7 +6,7 @@
 
 //remember, our backwards is forwards and that means a +z.
 enum direction {LEFT, RIGHT, UP, DOWN, FORWARDS, BACKWARDS, RXP, RYP, RXN, RYN, PLEFT, PRIGHT, PUP, PDOWN};
-
+enum rendererType {WIREFRAME, RASTERISED, RAYTRACED};
 
 
 class Object3DRenderer: public RasterisedRenderer {
@@ -22,6 +22,7 @@ class Object3DRenderer: public RasterisedRenderer {
       bool lookAt = false;
    public:
       void draw(DrawingWindow &window) override;
+      void drawRasterisedScene(DrawingWindow &window, rendererType renderType);
       void readOBJfile(std::string objPath, float scale);
       void translateCamera(direction d);
       void rotateCamera(direction d);
