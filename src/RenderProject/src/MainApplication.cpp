@@ -19,6 +19,7 @@ DrawingWindow window = DrawingWindow(WIDTH, HEIGHT);
 // BlueNoiseRenderer blueNoise = BlueNoiseRenderer();
 // ColourSpectrumRenderer spectrumRenderer = ColourSpectrumRenderer();
 // RasterisedRenderer rasterisedRenderer = RasterisedRenderer();
+//Object3DRenderer objRenderer = Object3DRenderer();
 RayTracedRenderer rtRenderer = RayTracedRenderer();
 
 //change depending on renderer

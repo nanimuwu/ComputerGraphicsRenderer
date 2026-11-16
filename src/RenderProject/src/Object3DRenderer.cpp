@@ -3,9 +3,10 @@
 #include <CanvasPoint.h>
 #include <Colour.h>
 #include <CanvasTriangle.h>
+#include <algorithm>
 
 
-Colour getColour(std::ifstream &mtlFile, std::string targetColour) {
+Colour Object3DRenderer::getColour(std::ifstream &mtlFile, std::string targetColour, std::string objPath) {
 
 	float r, g, b;
 	bool found = false;
@@ -23,6 +24,16 @@ Colour getColour(std::ifstream &mtlFile, std::string targetColour) {
 				g = std::stof(splitOutput[2]) * 255;
 				b = std::stof(splitOutput[3]) * 255;
 				found = true;
+
+                getline(mtlFile, line);
+                if (line.size()>0){
+			        splitOutput = split(line, ' ');
+                    if (splitOutput[0] == "map_Kd") {
+                        int pos = objPath.find_last_of('/');
+                        std::string pathOrigin = objPath.substr(0, pos+1);
+                        textures.emplace(targetColour, TextureMap(pathOrigin + splitOutput[1]));
+                    }
+                }
 			}
 		}
 	}
@@ -41,9 +52,10 @@ void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
 	std::string lineRead;
 
 	float x, y, z;
-	int v0, v1, v2;
+	int v0, v1, v2, t0, t1, t2;
 
 	std::vector<glm::vec3> vertices;
+    std::vector<TexturePoint> textureVertices;
 	Colour currentColour;
 
 	while (getline(obj, lineRead)) {
@@ -58,23 +70,52 @@ void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
 				mtl = std::ifstream(pathOrigin + splitOutput[1]);
 
 			} else if (splitOutput[0] == "usemtl") {
-				currentColour = getColour(mtl, splitOutput[1]);
+                bool found (false);
+                //, if in palette just add it ALSO check for texture
+                for (int i = 0; i < palette.size() && !found; i++) {
+                    if (palette[i].name == splitOutput[1]) {
+                        currentColour = palette[i];
+                        found = true;
+                    }
+                }
+                if (!found){
+				    currentColour = getColour(mtl, splitOutput[1], objPath);
+                    palette.push_back(currentColour);
+                }
 
 			} else if (splitOutput[0] == "v") {
 				x = std::stof(splitOutput[1]) * scale;
 				y = std::stof(splitOutput[2]) * scale;
 				z = std::stof(splitOutput[3]) * scale;
 				vertices.push_back(glm::vec3(x,y,z));
+            
+            } else if (splitOutput[0] == "vt") {
+                x = std::stof(splitOutput[1]);
+                y = std::stof(splitOutput[2]);
+                textureVertices.push_back(TexturePoint(x, y));
 
-			} else if (splitOutput[0] == "f") { // assumes no matching texture vertex
-				//obj vertex index starts at 1
-				v0 = std::stoi(split(splitOutput[1], '/')[0]) - 1;
-				v1 = std::stoi(split(splitOutput[2], '/')[0]) - 1;
-				v2 = std::stoi(split(splitOutput[3], '/')[0]) - 1;
-				
-				triangles.push_back(ModelTriangle(vertices[v0], vertices[v1], vertices[v2], currentColour));
+			} else if (splitOutput[0] == "f") { 
+				// obj vertex index starts at 1
+                std::vector<std::string> split0 = split(splitOutput[1], '/');
+                std::vector<std::string> split1 = split(splitOutput[2], '/');
+                std::vector<std::string> split2 = split(splitOutput[3], '/');
 
-            } // ignores object identifier 'o', not needed in my renderer
+				v0 = std::stoi(split0[0]) - 1;
+				v1 = std::stoi(split1[0]) - 1;
+				v2 = std::stoi(split2[0]) - 1;
+
+				ModelTriangle facet = ModelTriangle(vertices[v0], vertices[v1], vertices[v2], currentColour);
+
+                if (!split0[1].empty()) {
+                    t0 = std::stoi(split0[1]) - 1;
+				    t1 = std::stoi(split1[1]) - 1;
+				    t2 = std::stoi(split2[1]) - 1;
+                    facet.texturePoints = {textureVertices[t0], textureVertices[t1], textureVertices[t2]};
+                }
+
+                triangles.push_back(facet);
+                
+            } // ignores object identifier 'o', not needed in my renderer yet
 		}
 	}
 
@@ -203,7 +244,13 @@ void Object3DRenderer::drawRasterisedScene(DrawingWindow &window, rendererType r
                 targetTriangle[j] = CanvasPoint(targetVertex.x, targetVertex.y, targetVertex.z);
             }
             if (renderType == RASTERISED) {
-                drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
+                auto targetTexture = textures.find(triangles[i].colour.name);
+                if (targetTexture != textures.end()){
+                    TextureMap &map = targetTexture->second;
+                    drawTextureTriangle(window, targetTriangle, map); //FIXME: doesn't account for depths
+                } else {
+                    drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
+                }
             } else if (renderType == WIREFRAME) {
                 drawStrokedTriangle(window, targetTriangle, triangles[i].colour);
             }
@@ -211,6 +258,6 @@ void Object3DRenderer::drawRasterisedScene(DrawingWindow &window, rendererType r
     }
 }
 
-//below set empty as we are only using the raytraced renderer, but definition needed
 void Object3DRenderer::draw(DrawingWindow &window) {
+    drawRasterisedScene(window, RASTERISED);
 }

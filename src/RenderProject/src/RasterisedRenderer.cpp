@@ -223,7 +223,8 @@ void RasterisedRenderer::drawFilledTriangle(DrawingWindow &window, CanvasTriangl
 }
 
 void RasterisedRenderer::drawTextureTriangle(DrawingWindow &window, CanvasTriangle triangle, TextureMap &texture) {
-   
+   //FIXME: doesn't have zdepth logic
+
    triangle = sortTriangle(triangle);
 
    std::vector<CanvasPoint> topLine = interpolateCanvasPointValues(triangle[0], triangle[1]);
