@@ -1,7 +1,5 @@
 #pragma once
-#include <glm/glm.hpp>
 #include "RasterisedRenderer.h"
-#include <CanvasTriangle.h>
 #include <TextureMap.h>
 #include <map>
 
