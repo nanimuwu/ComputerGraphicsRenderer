@@ -177,13 +177,16 @@ void Object3DRenderer::setOrientationCentre() {
 
     //gave up trying to make it work for rotating in all axes because its just 
     //too much work for no marks and like i could get it to work but like nah
+    
+    //if possible try to make it manual lookat
+    //TODO: add vertical lookat too
     glm::vec3 forward = glm::normalize(cameraPosition - lookAtCentre);
     glm::vec3 right = glm::normalize(glm::cross(vertical, forward));
     glm::vec3 up = glm::normalize(glm::cross(forward, right));
     cameraOrientation = glm::mat3(right, up , forward);
 }
 
-void Object3DRenderer::draw(DrawingWindow &window) {
+void Object3DRenderer::drawRasterisedScene(DrawingWindow &window, rendererType renderType) {
     window.clearPixels();
     int xCameraOffset = round(window.width/2);
     int yCameraOffset = round(window.height/2);
@@ -199,8 +202,15 @@ void Object3DRenderer::draw(DrawingWindow &window) {
                 glm::vec3 targetVertex(cameraVertex);
                 targetTriangle[j] = CanvasPoint(targetVertex.x, targetVertex.y, targetVertex.z);
             }
-            drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
-            // drawStrokedTriangle(window, targetTriangle, triangles[i].colour);
+            if (renderType == RASTERISED) {
+                drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
+            } else if (renderType == WIREFRAME) {
+                drawStrokedTriangle(window, targetTriangle, triangles[i].colour);
+            }
         }
     }
+}
+
+//below set empty as we are only using the raytraced renderer, but definition needed
+void Object3DRenderer::draw(DrawingWindow &window) {
 }
