@@ -105,6 +105,7 @@ void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
 				v2 = std::stoi(split2[0]) - 1;
 
 				ModelTriangle facet = ModelTriangle(vertices[v0], vertices[v1], vertices[v2], currentColour);
+                facet.normal = glm::normalize(glm::cross((vertices[v1]-vertices[v0]), (vertices[v2]-vertices[v0])));
 
                 if (!split0[1].empty()) {
                     t0 = std::stoi(split0[1]) - 1;

@@ -40,8 +40,11 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 star
     }
 }
 
-Colour updateColourIntensity(Colour initialColour, float distance, glm::vec3 rayDirection, glm::vec3 normalVector) {
-    float mult = std::min(1.0f, 10.0f/(distance*distance));
+Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::vec3 lightDirection, glm::vec3 normalVector) {
+    float distMult = 1.0f/(pi*distanceToLight*distanceToLight);
+    float aoi = std::max(0.0f, glm::dot(lightDirection, normalVector));
+    float lightScalar = 5.0f;
+    float mult = std::min(1.0f, lightScalar*distMult*aoi);
     return Colour(mult*initialColour.red, mult*initialColour.green, mult*initialColour.blue);
 }
 
@@ -69,11 +72,11 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectionPoint;
                         RayTriangleIntersection lightIntersection = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
                        
-                        Colour c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, targetTriangle.distanceFromCamera, rayDirection, glm::vec3(0));
+                        Colour c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
                         Colour minColour = Colour(
-                                0.2 * targetTriangle.intersectedTriangle.colour.red,
-                                0.2 * targetTriangle.intersectedTriangle.colour.green,
-                                0.2 * targetTriangle.intersectedTriangle.colour.blue);
+                                0.1 * targetTriangle.intersectedTriangle.colour.red,
+                                0.1 * targetTriangle.intersectedTriangle.colour.green,
+                                0.1 * targetTriangle.intersectedTriangle.colour.blue);
 
 
                         //if in shadow
