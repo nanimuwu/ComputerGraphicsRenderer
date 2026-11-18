@@ -1,5 +1,8 @@
 #include "RayTracedRenderer.h"
 #include <glm/glm.hpp>
+#include <algorithm>
+
+const float pi = 3.1415926535897932384626;
 
 enum rendererType currentRendererType = RAYTRACED;
 
@@ -19,7 +22,7 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 star
             ((possibleSolution[2]  >= 0.0) && (possibleSolution[2] <= 1.0)) &&
             ((possibleSolution[1]  + possibleSolution[2]) <= 1.0) && 
             (possibleSolution[0] < output.distanceFromCamera) &&
-            (possibleSolution[0] > 0.0001f)){
+            (possibleSolution[0] > 0.001f)){
                 output = RayTriangleIntersection(
                             (startingPoint + possibleSolution[0]*rayDirection), 
                             possibleSolution[0],
@@ -37,6 +40,11 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 star
     }
 }
 
+Colour updateColourIntensity(Colour initialColour, float distance, glm::vec3 rayDirection, glm::vec3 normalVector) {
+    float mult = std::min(1.0f, 10.0f/(distance*distance));
+    return Colour(mult*initialColour.red, mult*initialColour.green, mult*initialColour.blue);
+}
+
 void RayTracedRenderer::setRenderType(rendererType renderType) {
     currentRendererType = renderType;
 }
@@ -48,20 +56,36 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
         case (RAYTRACED):
             for (int y = 0; y < window.height; y++) {
                 for (int x = 0; x < window.width; x++) {
-                    float u = ((x + 0.5f) - window.width  / 2.0f) / imagePlaneScaling;
-                    float v = (window.height / 2.0f - (y + 0.5f)) / imagePlaneScaling;
+                    float u = (x - window.width  / 2.0f) / imagePlaneScaling;
+                    float v = (window.height / 2.0f - y) / imagePlaneScaling;
 
                     glm::vec3 camDir(u, v, -focalLength);
                     glm::vec3 rayDirection = glm::normalize(cameraOrientation * camDir);
 
                     RayTriangleIntersection targetTriangle = getClosestIntersection(cameraPosition, rayDirection);
+                    
+                    //if hit triangle
                     if (targetTriangle.triangleIndex != -1) {
                         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectionPoint;
                         RayTriangleIntersection lightIntersection = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
-                        Colour c = targetTriangle.intersectedTriangle.colour;
+                       
+                        Colour c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, targetTriangle.distanceFromCamera, rayDirection, glm::vec3(0));
+                        Colour minColour = Colour(
+                                0.2 * targetTriangle.intersectedTriangle.colour.red,
+                                0.2 * targetTriangle.intersectedTriangle.colour.green,
+                                0.2 * targetTriangle.intersectedTriangle.colour.blue);
+
+
+                        //if in shadow
                         if ((lightIntersection.triangleIndex != -1) && (lightIntersection.distanceFromCamera < glm::length(pointToLight))) {
-                            c = Colour(0,0,0);
+                            c = minColour;
                         }
+                       
+                        //if too far away from the light source 
+                        if (glm::length(glm::vec3(c.red, c.green, c.blue)) < glm::length(glm::vec3(minColour.red, minColour.green, minColour.blue))) {
+                            c = minColour;
+                        }
+                        
 
                         uint32_t colour = (255 << 24) + (c.red << 16) + (c.green << 8) + c.blue;
                         window.setPixelColour(x, y, colour);

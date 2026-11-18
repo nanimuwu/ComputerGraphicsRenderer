@@ -106,7 +106,7 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 		else if (event.key.keysym.sym == SDLK_8) changeRenderer(WIREFRAME);
 		else if (event.key.keysym.sym == SDLK_9) changeRenderer(RASTERISED);
 		else if (event.key.keysym.sym == SDLK_0) changeRenderer(RAYTRACED);		
-		else if (event.key.keysym.sym == SDLK_o) loadObj(currentRenderer, "./src/models/cornell-box.obj",0.35);
+		else if (event.key.keysym.sym == SDLK_o) loadObj(currentRenderer, "./src/models/cornell-box/cornell-box.obj",0.35);
 		else if (event.key.keysym.sym == SDLK_l) toggleLookAt(currentRenderer);
 		else if (event.key.keysym.sym == SDLK_TAB) savingFrames = !savingFrames;
 		else if (event.key.keysym.sym == SDLK_RETURN) window.toggleFullscreen();
