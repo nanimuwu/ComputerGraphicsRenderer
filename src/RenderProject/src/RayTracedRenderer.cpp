@@ -1,6 +1,7 @@
 #include "RayTracedRenderer.h"
 #include <glm/glm.hpp>
 #include <algorithm>
+#include <cmath>
 
 const float pi = 3.1415926535897932384626;
 
@@ -40,12 +41,25 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 star
     }
 }
 
-Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::vec3 lightDirection, glm::vec3 normalVector) {
+Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::vec3 cameraDirection, glm::vec3 lightDirection, glm::vec3 normalVector) {
     float distMult = 1.0f/(pi*distanceToLight*distanceToLight);
     float aoi = std::max(0.0f, glm::dot(lightDirection, normalVector));
+    float specularSpread = 0.0f;
+
+    if (aoi > 0.0f) {
+        glm::vec3 outgoingLight = lightDirection - 2.0f*normalVector*(glm::dot(lightDirection, normalVector));
+        float specularPower = 64;
+        specularSpread = std::pow(std::max(glm::dot(cameraDirection, outgoingLight), 0.0f), specularPower);
+    }
+
     float lightScalar = 5.0f;
+
+
     float mult = std::min(1.0f, lightScalar*distMult*aoi);
-    return Colour(mult*initialColour.red, mult*initialColour.green, mult*initialColour.blue);
+    float newRed = std::min(255.0f, mult*initialColour.red+(255*specularSpread*mult));
+    float newGreen = std::min(255.0f, mult*initialColour.green+(255*specularSpread*mult));
+    float newBlue = std::min(255.0f, mult*initialColour.blue+(255*specularSpread*mult));
+    return Colour(newRed, newGreen, newBlue);
 }
 
 void RayTracedRenderer::setRenderType(rendererType renderType) {
@@ -72,7 +86,7 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectionPoint;
                         RayTriangleIntersection lightIntersection = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
                        
-                        Colour c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
+                        Colour c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
                         Colour minColour = Colour(
                                 0.1 * targetTriangle.intersectedTriangle.colour.red,
                                 0.1 * targetTriangle.intersectedTriangle.colour.green,
