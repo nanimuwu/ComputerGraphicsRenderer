@@ -11,6 +11,8 @@ enum rendererType {WIREFRAME, RASTERISED, RAYTRACED};
 class Object3DRenderer: public RasterisedRenderer {
    protected:
       std::vector<ModelTriangle> triangles;
+      // each column corresponds to the matching vertex in order in the triangle
+      std::vector<glm::mat3> vertexNormals; 
       std::vector<Colour> palette;
       std::map<std::string, TextureMap> textures;
       glm::vec3 cameraPosition = glm::vec3(0.0, 0.5, 2.0);
@@ -31,6 +33,7 @@ class Object3DRenderer: public RasterisedRenderer {
       bool getLookAt();
    private:
       Colour getColour(std::ifstream &mtlFile, std::string targetColour, std::string objPath);
+      void getVertexNormals();
       CanvasPoint projectVertexOntoCanvasPoint(glm::vec3 cameraPosition, float focalLength, glm::vec3 vertexPosition);
       void setOrientationCentre();
 };
