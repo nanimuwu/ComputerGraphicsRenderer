@@ -17,12 +17,14 @@ struct vertexColours {
 };
 
 
-void toggleGouraud(){
-    gouraud = !gouraud; phong = !gouraud;
+void RayTracedRenderer::toggleGouraud(){
+    phong = false;
+    gouraud = !gouraud; 
 }
 
-void togglePhong(){
-    phong = !phong; gouraud = !phong;
+void RayTracedRenderer::togglePhong(){
+    gouraud = false;
+    phong = !phong; 
 }
 
 std::vector<vertexColours> triangleVertexColours;
@@ -107,12 +109,6 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
 
     switch (currentRendererType) {
         case (RAYTRACED):
-
-        triangleVertexColours.clear();
-        for (int i = 0; i<triangles.size(); i++) {
-            triangleVertexColours.push_back(vertexColours());
-        }
-
             for (int y = 0; y < window.height; y++) {
                 for (int x = 0; x < window.width; x++) {
                     float u = (x - window.width  / 2.0f) / imagePlaneScaling;
@@ -136,13 +132,23 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                                     0.1 * targetTriangle.intersectedTriangle.colour.blue);
                         Colour c;
 
-                        if (!triangleVertexColours[targetTriangle.triangleIndex].calculated){
-                            updateTriangleVertexInfo(targetTriangle, cameraPosition, lightPosition, vertexNormals);
-                        } 
+                        if (gouraud) {
 
-                        c = getGourardColour(triangleVertexColours[targetTriangle.triangleIndex].colours, targetTriangleBarycentricCoordinates);
+                            triangleVertexColours.clear();
+                            for (int i = 0; i<triangles.size(); i++) {
+                                triangleVertexColours.push_back(vertexColours());
+                            }
 
-                        //______________________________________________________________
+                            if (!triangleVertexColours[targetTriangle.triangleIndex].calculated){
+                                updateTriangleVertexInfo(targetTriangle, cameraPosition, lightPosition, vertexNormals);
+                            } 
+
+                            c = getGourardColour(triangleVertexColours[targetTriangle.triangleIndex].colours, targetTriangleBarycentricCoordinates);
+                        } else if (phong) {
+                            
+                        } else {
+                            c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
+                        }
 
                         //if in shadow
                         if ((lightIntersection.triangleIndex != -1) && (lightIntersection.distanceFromCamera < glm::length(pointToLight))) {
@@ -161,6 +167,7 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                 }
             }
             break;
+
         case (WIREFRAME):
             drawRasterisedScene(window, currentRendererType);
             break;

@@ -55,7 +55,7 @@ void changeGouraud() {
 	currentRenderer->toggleGouraud();
 }
 
-void changePhone() {
+void changePhong() {
 	currentRenderer->togglePhong();
 }
 
@@ -75,7 +75,9 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 		else if (event.key.keysym.sym == SDLK_COMMA) transformCamera(currentRenderer, RYN);
 		else if (event.key.keysym.sym == SDLK_1) changeRenderer(WIREFRAME);
 		else if (event.key.keysym.sym == SDLK_2) changeRenderer(RASTERISED);
-		else if (event.key.keysym.sym == SDLK_3) changeRenderer(RAYTRACED);		
+		else if (event.key.keysym.sym == SDLK_3) changeRenderer(RAYTRACED);
+		else if (event.key.keysym.sym == SDLK_4) changeGouraud();
+		else if (event.key.keysym.sym == SDLK_5) changePhong();		
 
 		else if (event.key.keysym.sym == SDLK_l) toggleLookAt();
 		else if (event.key.keysym.sym == SDLK_TAB) savingFrames = !savingFrames;
@@ -86,7 +88,7 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 int main(int argc, char *argv[]) {
 	SDL_Event event;
 	changeRenderer(RASTERISED);
-	loadObj(currentRenderer, "./src/models/cornell-box/cornell-box.obj",0.35);
+	loadObj(currentRenderer, "./src/models/sphere/sphere.obj",0.35);
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
