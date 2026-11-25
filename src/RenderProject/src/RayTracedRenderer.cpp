@@ -6,10 +6,18 @@
 const float pi = 3.1415926535897932384626;
 
 enum rendererType currentRendererType = RAYTRACED;
+const float lightScalar = 5.0f;
+const float specularPower = 64;
+struct vertexColours {
+    std::array<Colour,3> colours;
+    bool calculated = false;
+};
 
-RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 startingPoint, glm::vec3 rayDirection){
+std::vector<vertexColours> triangleVertexColours;
+
+IntersectionResult RayTracedRenderer::getClosestIntersection(glm::vec3 startingPoint, glm::vec3 rayDirection){
     
-    RayTriangleIntersection output; output.distanceFromCamera = std::numeric_limits<float>::infinity();
+    IntersectionResult output; output.targetTriangle.distanceFromCamera = std::numeric_limits<float>::infinity();
     bool found = false;
 
     for (int i = 0; i<triangles.size(); i++) {
@@ -17,28 +25,28 @@ RayTriangleIntersection RayTracedRenderer::getClosestIntersection(glm::vec3 star
         glm::vec3 e1 = triangles[i].vertices[2] - triangles[i].vertices[0];
         glm::vec3 SPVector = startingPoint - triangles[i].vertices[0];
         glm::mat3 DEMatrix(-rayDirection, e0, e1);
-        glm::vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
+        glm::vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector; //(t,u,v) -> t is distance, u & v are barycentric coords
         
         if (((possibleSolution[1] >= 0.0) && (possibleSolution[1]  <= 1.0)) &&
             ((possibleSolution[2]  >= 0.0) && (possibleSolution[2] <= 1.0)) &&
             ((possibleSolution[1]  + possibleSolution[2]) <= 1.0) && 
-            (possibleSolution[0] < output.distanceFromCamera) &&
+            (possibleSolution[0] < output.targetTriangle.distanceFromCamera) &&
             (possibleSolution[0] > 0.001f)){
-                output = RayTriangleIntersection(
+                output.targetTriangle = RayTriangleIntersection(
                             (startingPoint + possibleSolution[0]*rayDirection), 
                             possibleSolution[0],
                             triangles[i],
                             i);
-
-                            found = true;
+                output.barycentric = possibleSolution;
+                found = true;
         }
     }
 
     if (!found) {
-        return RayTriangleIntersection(glm::vec3(0), -1, ModelTriangle(glm::vec3(0), glm::vec3(0), glm::vec3(0), Colour(0,0,0)), -1);
-    } else {
-        return output;
+        output.targetTriangle =RayTriangleIntersection(glm::vec3(0), -1, ModelTriangle(glm::vec3(0), glm::vec3(0), glm::vec3(0), Colour(0,0,0)), -1);
+        output.barycentric - glm::vec3(-1,-1,-1);
     }
+    return output;
 }
 
 Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::vec3 cameraDirection, glm::vec3 lightDirection, glm::vec3 normalVector) {
@@ -48,18 +56,35 @@ Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::v
 
     if (aoi > 0.0f) {
         glm::vec3 outgoingLight = lightDirection - 2.0f*normalVector*(glm::dot(lightDirection, normalVector));
-        float specularPower = 64;
         specularSpread = std::pow(std::max(glm::dot(cameraDirection, outgoingLight), 0.0f), specularPower);
     }
-
-    float lightScalar = 5.0f;
-
 
     float mult = std::min(1.0f, lightScalar*distMult*aoi);
     float newRed = std::min(255.0f, mult*initialColour.red+(255*specularSpread*mult));
     float newGreen = std::min(255.0f, mult*initialColour.green+(255*specularSpread*mult));
     float newBlue = std::min(255.0f, mult*initialColour.blue+(255*specularSpread*mult));
     return Colour(newRed, newGreen, newBlue);
+}
+
+//TODO:
+void updateTriangleVertexInfo(RayTriangleIntersection targetTriangle, glm::vec3 cameraPosition, glm::vec3 lightPosition) {
+    triangleVertexColours[targetTriangle.triangleIndex].calculated = true;
+
+    for (int i = 0; i < 3; i++) {
+        glm::vec3 rayDirection = glm::normalize(targetTriangle.intersectedTriangle.vertices[i] - cameraPosition);
+        glm::vec3 pointToLight = lightPosition - targetTriangle.intersectedTriangle.vertices[i];
+        triangleVertexColours[targetTriangle.triangleIndex].colours[i] = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
+    }
+}
+
+Colour getGourardColour(std::array<Colour, 3> colours, glm::vec3 barycentricCoordinates) {
+    float u = barycentricCoordinates[1];
+    float v = barycentricCoordinates[2];
+    float w = 1-u-v;
+    float r = colours[0].red * w + colours[1].red * u + colours[2].red * v;
+    float g = colours[0].green * w + colours[1].green * u + colours[2].green * v;
+    float b = colours[0].blue * w + colours[1].blue * u + colours[2].blue * v;
+    return Colour(r,g,b);
 }
 
 void RayTracedRenderer::setRenderType(rendererType renderType) {
@@ -71,6 +96,12 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
 
     switch (currentRendererType) {
         case (RAYTRACED):
+
+        triangleVertexColours.clear();
+        for (int i = 0; i<triangles.size(); i++) {
+            triangleVertexColours.push_back(vertexColours());
+        }
+
             for (int y = 0; y < window.height; y++) {
                 for (int x = 0; x < window.width; x++) {
                     float u = (x - window.width  / 2.0f) / imagePlaneScaling;
@@ -79,19 +110,29 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                     glm::vec3 camDir(u, v, -focalLength);
                     glm::vec3 rayDirection = glm::normalize(cameraOrientation * camDir);
 
-                    RayTriangleIntersection targetTriangle = getClosestIntersection(cameraPosition, rayDirection);
+                    IntersectionResult intersection = getClosestIntersection(cameraPosition, rayDirection);
+                    RayTriangleIntersection targetTriangle = intersection.targetTriangle;
+                    glm::vec3 targetTriangleBarycentricCoordinates = intersection.barycentric;
                     
                     //if hit triangle
                     if (targetTriangle.triangleIndex != -1) {
                         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectionPoint;
-                        RayTriangleIntersection lightIntersection = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
-                       
-                        Colour c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
+                        IntersectionResult lightIntersectionResult = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
+                        RayTriangleIntersection lightIntersection = lightIntersectionResult.targetTriangle;
                         Colour minColour = Colour(
-                                0.1 * targetTriangle.intersectedTriangle.colour.red,
-                                0.1 * targetTriangle.intersectedTriangle.colour.green,
-                                0.1 * targetTriangle.intersectedTriangle.colour.blue);
+                                    0.1 * targetTriangle.intersectedTriangle.colour.red,
+                                    0.1 * targetTriangle.intersectedTriangle.colour.green,
+                                    0.1 * targetTriangle.intersectedTriangle.colour.blue);
+                        Colour c;
 
+                        //TODO:yeah do the gourard here
+                        if (!triangleVertexColours[targetTriangle.triangleIndex].calculated){
+                            updateTriangleVertexInfo(targetTriangle, cameraPosition, lightPosition);
+                        } 
+
+                        c = getGourardColour(triangleVertexColours[targetTriangle.triangleIndex].colours, targetTriangleBarycentricCoordinates);
+
+                        //______________________________________________________________
 
                         //if in shadow
                         if ((lightIntersection.triangleIndex != -1) && (lightIntersection.distanceFromCamera < glm::length(pointToLight))) {
