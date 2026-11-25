@@ -45,6 +45,45 @@ Colour Object3DRenderer::getColour(std::ifstream &mtlFile, std::string targetCol
 	return Colour(targetColour,r,g,b);
 }
 
+void Object3DRenderer::getVertexNormals() {
+
+    vertexNormals = {};
+    std::vector<std::array<int, 3>> counts;
+    for (int i = 0; i < triangles.size(); i++) {
+        const glm::vec3 &n = triangles[i].normal;
+        vertexNormals.emplace_back(glm::mat3({n, n, n}));
+        counts.push_back({1,1,1});
+    }
+
+    //i is checker, j is checkee
+    //a and b correspond
+    for (int i = 0; i < triangles.size(); i++){
+        for (int j = i + 1; j < triangles.size(); j++) {
+            for (int a = 0; a < 3; a++) {
+                for (int b = 0; b < 3; b++) {
+                    if (triangles[i].vertices[a] == triangles[j].vertices[b]) {
+                        if (glm::dot(triangles[i].normal, triangles[j].normal) > 0.3f) {
+                            vertexNormals[i][a] += triangles[j].normal;
+                            counts[i][a]++;
+                            vertexNormals[j][b] += triangles[i].normal;
+                            counts[j][b]++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for (size_t i = 0; i < triangles.size(); i++) {
+        for (int j = 0; j < 3; j++) {
+            glm::vec3 normalAverage = vertexNormals[i][j] / float(counts[i][j]);
+            if (glm::length(normalAverage) > 0.0001f) {
+                vertexNormals[i][j] = glm::normalize(normalAverage);
+            } else vertexNormals[i][j] = triangles[i].normal;
+        }
+    }
+}
+
 void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
 	triangles.clear();
 	std::ifstream obj(objPath);
@@ -105,6 +144,7 @@ void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
 				v2 = std::stoi(split2[0]) - 1;
 
 				ModelTriangle facet = ModelTriangle(vertices[v0], vertices[v1], vertices[v2], currentColour);
+                facet.normal = glm::normalize(glm::cross((vertices[v1]-vertices[v0]), (vertices[v2]-vertices[v0])));
 
                 if (!split0[1].empty()) {
                     t0 = std::stoi(split0[1]) - 1;
@@ -121,6 +161,8 @@ void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
 
 	obj.close();
 	mtl.close();
+
+    getVertexNormals();
 }
 
 CanvasPoint Object3DRenderer::projectVertexOntoCanvasPoint(glm::vec3 cameraPosition, float focalLength, glm::vec3 vertexPosition) {
@@ -247,7 +289,8 @@ void Object3DRenderer::drawRasterisedScene(DrawingWindow &window, rendererType r
                 auto targetTexture = textures.find(triangles[i].colour.name);
                 if (targetTexture != textures.end()){
                     TextureMap &map = targetTexture->second;
-                    drawTextureTriangle(window, targetTriangle, map); //FIXME: doesn't account for depths
+                    //drawTextureTriangle(window, targetTriangle, map); //FIXME: doesn't account for depths
+                    drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
                 } else {
                     drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
                 }
