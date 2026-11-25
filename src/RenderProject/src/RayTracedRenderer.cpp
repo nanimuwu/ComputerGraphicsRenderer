@@ -8,10 +8,22 @@ const float pi = 3.1415926535897932384626;
 enum rendererType currentRendererType = RAYTRACED;
 const float lightScalar = 5.0f;
 const float specularPower = 64;
+
+bool gouraud = false;
+bool phong = false;
 struct vertexColours {
     std::array<Colour,3> colours;
     bool calculated = false;
 };
+
+
+void toggleGouraud(){
+    gouraud = !gouraud; phong = !gouraud;
+}
+
+void togglePhong(){
+    phong = !phong; gouraud = !phong;
+}
 
 std::vector<vertexColours> triangleVertexColours;
 
@@ -125,7 +137,6 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                         Colour c;
 
                         if (!triangleVertexColours[targetTriangle.triangleIndex].calculated){
-
                             updateTriangleVertexInfo(targetTriangle, cameraPosition, lightPosition, vertexNormals);
                         } 
 

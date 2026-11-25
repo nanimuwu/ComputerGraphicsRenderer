@@ -1,8 +1,4 @@
 #include "Renderer.h"
-// #include "RedNoiseRenderer.h"
-// #include "BlueNoiseRenderer.h"
-// #include "ColourSpectrumRenderer.h"
-// #include "RasterisedRenderer.h"
 #include "Object3DRenderer.h"
 #include "RayTracedRenderer.h"
 #include <fstream>
@@ -14,12 +10,6 @@ extern const int WIDTH = 320;
 extern const int HEIGHT = 240;
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT);
-// RedNoiseRenderer redNoise = RedNoiseRenderer();
-// Renderer* currentRenderer = &redNoise;
-// BlueNoiseRenderer blueNoise = BlueNoiseRenderer();
-// ColourSpectrumRenderer spectrumRenderer = ColourSpectrumRenderer();
-// RasterisedRenderer rasterisedRenderer = RasterisedRenderer();
-//Object3DRenderer objRenderer = Object3DRenderer();
 RayTracedRenderer rtRenderer = RayTracedRenderer();
 
 //change depending on renderer
@@ -39,28 +29,6 @@ int frameCounter = 0;
 
 enum triangleType {STROKED, FILLED, TEXTURE};
 
-// void drawRandomTriangle(RasterisedRenderer* currentRenderer, triangleType type){
-// 	CanvasPoint v0(rand()%window.width, rand()%window.height);
-// 	CanvasPoint v1(rand()%window.width, rand()%window.height);
-// 	CanvasPoint v2(rand()%window.width, rand()%window.height);
-// 	CanvasTriangle t(v0,v1,v2);
-// 	Colour c(rand()%256, rand()%256, rand()%256);
-// 	if (type == STROKED) {
-// 		currentRenderer->drawStrokedTriangle(window,t,c);
-// 	} else if (type == FILLED) {
-// 		currentRenderer->drawFilledTriangle(window,t,c, true);
-// 	} else if (type == TEXTURE) {
-// 		v0 = CanvasPoint(160, 10); v0.texturePoint = TexturePoint(195,5);
-// 		v1 = CanvasPoint(300, 230); v1.texturePoint = TexturePoint(395,380);
-// 		v2 = CanvasPoint(10, 150); v2.texturePoint = TexturePoint(65,330);
-// 		t = CanvasTriangle(v0, v1, v2);
-// 		//unclear if still working
-// 		TextureMap texture ("./src/models/texture.ppm");
-// 		currentRenderer->drawTextureTriangle(window, t, texture);
-// 	}
-	
-// }
-
 void loadObj(RayTracedRenderer* currentRenderer, std::string objPath, float scale) {
 	currentRenderer->readOBJfile(objPath, scale);
 }
@@ -75,7 +43,7 @@ void transformCamera(RayTracedRenderer* currentRenderer, direction d){
 	}
 }
 
-void toggleLookAt(RayTracedRenderer* currentRenderer) {
+void toggleLookAt() {
 	currentRenderer->setLookAt(!(currentRenderer->getLookAt()), glm::vec3(0.0, 0.0, 0.0));
 }
 
@@ -83,31 +51,33 @@ void changeRenderer(rendererType renderType) {
 	currentRenderer->setRenderType(renderType);
 }
 
+void changeGouraud() {
+	currentRenderer->toggleGouraud();
+}
+
+void changePhone() {
+	currentRenderer->togglePhong();
+}
+
 void handleEvent(SDL_Event event, DrawingWindow &window) {
 	if (event.type == SDL_KEYDOWN) {
 		if (event.key.keysym.sym == SDLK_LEFT) transformCamera(currentRenderer, LEFT);
 		else if (event.key.keysym.sym == SDLK_RIGHT) transformCamera(currentRenderer, RIGHT);
-		else if (event.key.keysym.sym == SDLK_UP) transformCamera(currentRenderer, FORWARDS);
-		else if (event.key.keysym.sym == SDLK_DOWN) transformCamera(currentRenderer, BACKWARDS);
-		else if (event.key.keysym.sym == SDLK_w) transformCamera(currentRenderer, UP);
-		else if (event.key.keysym.sym == SDLK_s) transformCamera(currentRenderer, DOWN);
-		else if (event.key.keysym.sym == SDLK_q) transformCamera(currentRenderer, PLEFT);
-		else if (event.key.keysym.sym == SDLK_e) transformCamera(currentRenderer, PRIGHT);
-		else if (event.key.keysym.sym == SDLK_2) transformCamera(currentRenderer, PUP);
-		else if (event.key.keysym.sym == SDLK_x) transformCamera(currentRenderer, PDOWN);
-		else if (event.key.keysym.sym == SDLK_3) transformCamera(currentRenderer, RXP);
-		else if (event.key.keysym.sym == SDLK_4) transformCamera(currentRenderer, RYP);
-		else if (event.key.keysym.sym == SDLK_5) transformCamera(currentRenderer, RXN);
-		else if (event.key.keysym.sym == SDLK_6) transformCamera(currentRenderer, RYN);
-		// else if (event.key.keysym.sym == SDLK_u) drawRandomTriangle(&rasterisedRenderer, STROKED);
-		// else if (event.key.keysym.sym == SDLK_f) drawRandomTriangle(&rasterisedRenderer, FILLED);
-		// else if (event.key.keysym.sym == SDLK_t) drawRandomTriangle(&rasterisedRenderer, TEXTURE);
-		//TODO: change the keybinds to specification 
-		else if (event.key.keysym.sym == SDLK_8) changeRenderer(WIREFRAME);
-		else if (event.key.keysym.sym == SDLK_9) changeRenderer(RASTERISED);
-		else if (event.key.keysym.sym == SDLK_0) changeRenderer(RAYTRACED);		
-		else if (event.key.keysym.sym == SDLK_o) loadObj(currentRenderer, "./src/models/sphere/sphere.obj",0.35);
-		else if (event.key.keysym.sym == SDLK_l) toggleLookAt(currentRenderer);
+		else if (event.key.keysym.sym == SDLK_EQUALS) transformCamera(currentRenderer, FORWARDS);
+		else if (event.key.keysym.sym == SDLK_MINUS) transformCamera(currentRenderer, BACKWARDS);
+		else if (event.key.keysym.sym == SDLK_DOWN) transformCamera(currentRenderer, UP); //reversed
+		else if (event.key.keysym.sym == SDLK_UP) transformCamera(currentRenderer, DOWN); //reversed
+		else if (event.key.keysym.sym == SDLK_w) transformCamera(currentRenderer, PLEFT);
+		else if (event.key.keysym.sym == SDLK_s) transformCamera(currentRenderer, PRIGHT);
+		else if (event.key.keysym.sym == SDLK_a) transformCamera(currentRenderer, PUP);
+		else if (event.key.keysym.sym == SDLK_d) transformCamera(currentRenderer, PDOWN);
+		else if (event.key.keysym.sym == SDLK_PERIOD) transformCamera(currentRenderer, RYP);
+		else if (event.key.keysym.sym == SDLK_COMMA) transformCamera(currentRenderer, RYN);
+		else if (event.key.keysym.sym == SDLK_1) changeRenderer(WIREFRAME);
+		else if (event.key.keysym.sym == SDLK_2) changeRenderer(RASTERISED);
+		else if (event.key.keysym.sym == SDLK_3) changeRenderer(RAYTRACED);		
+
+		else if (event.key.keysym.sym == SDLK_l) toggleLookAt();
 		else if (event.key.keysym.sym == SDLK_TAB) savingFrames = !savingFrames;
 		else if (event.key.keysym.sym == SDLK_RETURN) window.toggleFullscreen();
 	}
@@ -115,6 +85,8 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 
 int main(int argc, char *argv[]) {
 	SDL_Event event;
+	changeRenderer(RASTERISED);
+	loadObj(currentRenderer, "./src/models/cornell-box/cornell-box.obj",0.35);
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);
