@@ -66,14 +66,13 @@ Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::v
     return Colour(newRed, newGreen, newBlue);
 }
 
-//TODO:
-void updateTriangleVertexInfo(RayTriangleIntersection targetTriangle, glm::vec3 cameraPosition, glm::vec3 lightPosition) {
+void updateTriangleVertexInfo(RayTriangleIntersection targetTriangle, glm::vec3 cameraPosition, glm::vec3 lightPosition, std::vector<glm::mat3> &vertexNormals) {
     triangleVertexColours[targetTriangle.triangleIndex].calculated = true;
 
     for (int i = 0; i < 3; i++) {
         glm::vec3 rayDirection = glm::normalize(targetTriangle.intersectedTriangle.vertices[i] - cameraPosition);
         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectedTriangle.vertices[i];
-        triangleVertexColours[targetTriangle.triangleIndex].colours[i] = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
+        triangleVertexColours[targetTriangle.triangleIndex].colours[i] = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), vertexNormals[targetTriangle.triangleIndex][i]);
     }
 }
 
@@ -125,9 +124,9 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                                     0.1 * targetTriangle.intersectedTriangle.colour.blue);
                         Colour c;
 
-                        //TODO:yeah do the gourard here
                         if (!triangleVertexColours[targetTriangle.triangleIndex].calculated){
-                            updateTriangleVertexInfo(targetTriangle, cameraPosition, lightPosition);
+
+                            updateTriangleVertexInfo(targetTriangle, cameraPosition, lightPosition, vertexNormals);
                         } 
 
                         c = getGourardColour(triangleVertexColours[targetTriangle.triangleIndex].colours, targetTriangleBarycentricCoordinates);
