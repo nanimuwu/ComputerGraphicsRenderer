@@ -84,7 +84,7 @@ void Object3DRenderer::getVertexNormals() {
     }
 }
 
-void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
+void Object3DRenderer::readOBJfile(std::string objPath, float scale, glm::vec3 offset) { //offset unscaled
 	triangles.clear();
 	std::ifstream obj(objPath);
 	std::ifstream mtl;
@@ -126,7 +126,7 @@ void Object3DRenderer::readOBJfile(std::string objPath, float scale) {
 				x = std::stof(splitOutput[1]) * scale;
 				y = std::stof(splitOutput[2]) * scale;
 				z = std::stof(splitOutput[3]) * scale;
-				vertices.push_back(glm::vec3(x,y,z));
+				vertices.push_back(glm::vec3(x,y,z)+offset);
             
             } else if (splitOutput[0] == "vt") {
                 x = std::stof(splitOutput[1]);

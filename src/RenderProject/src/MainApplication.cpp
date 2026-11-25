@@ -29,8 +29,8 @@ int frameCounter = 0;
 
 enum triangleType {STROKED, FILLED, TEXTURE};
 
-void loadObj(RayTracedRenderer* currentRenderer, std::string objPath, float scale) {
-	currentRenderer->readOBJfile(objPath, scale);
+void loadObj(RayTracedRenderer* currentRenderer, std::string objPath, float scale, glm::vec3 offset) {
+	currentRenderer->readOBJfile(objPath, scale, offset);
 }
 
 void transformCamera(RayTracedRenderer* currentRenderer, direction d){
@@ -88,7 +88,7 @@ void handleEvent(SDL_Event event, DrawingWindow &window) {
 int main(int argc, char *argv[]) {
 	SDL_Event event;
 	changeRenderer(RASTERISED);
-	loadObj(currentRenderer, "./src/models/textured-cornell-box/textured-cornell-box.obj",0.35);
+	loadObj(currentRenderer, "./src/models/textured-cornell-box/textured-cornell-box.obj",0.35, glm::vec3(0));
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);

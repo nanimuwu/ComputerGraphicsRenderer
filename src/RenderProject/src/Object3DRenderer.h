@@ -26,7 +26,7 @@ class Object3DRenderer: public RasterisedRenderer {
    public:
       void draw(DrawingWindow &window) override;
       void drawRasterisedScene(DrawingWindow &window, rendererType renderType);
-      void readOBJfile(std::string objPath, float scale);
+      void readOBJfile(std::string objPath, float scale, glm::vec3 offset);
       void translateCamera(direction d);
       void rotateCamera(direction d);
       void setLookAt(bool value, glm::vec3 targetCentre);
