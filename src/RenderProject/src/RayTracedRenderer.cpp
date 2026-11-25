@@ -6,7 +6,7 @@
 const float pi = 3.1415926535897932384626;
 
 enum rendererType currentRendererType = RAYTRACED;
-const float lightScalar = 5.0f;
+const float lightScalar = 10.0f;
 const float specularPower = 64;
 
 bool gouraud = false;
@@ -16,6 +16,7 @@ struct vertexColours {
     bool calculated = false;
 };
 
+std::vector<vertexColours> triangleVertexColours;
 
 void RayTracedRenderer::toggleGouraud(){
     phong = false;
@@ -27,7 +28,10 @@ void RayTracedRenderer::togglePhong(){
     phong = !phong; 
 }
 
-std::vector<vertexColours> triangleVertexColours;
+void RayTracedRenderer::setRenderType(rendererType renderType) {
+    currentRendererType = renderType;
+}
+
 
 IntersectionResult RayTracedRenderer::getClosestIntersection(glm::vec3 startingPoint, glm::vec3 rayDirection){
     
@@ -100,8 +104,11 @@ Colour getGourardColour(std::array<Colour, 3> colours, glm::vec3 barycentricCoor
     return Colour(r,g,b);
 }
 
-void RayTracedRenderer::setRenderType(rendererType renderType) {
-    currentRendererType = renderType;
+glm::vec3 getPhongNormal(glm::mat3 &vertexNormals, glm::vec3 barycentricCoordinates) {
+    float u = barycentricCoordinates[1];
+    float v = barycentricCoordinates[2];
+    float w = 1-u-v;
+    return (w*vertexNormals[0] + u *vertexNormals[1] + v *vertexNormals[2]);
 }
 
 void RayTracedRenderer::draw(DrawingWindow &window) {
@@ -145,7 +152,8 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
 
                             c = getGourardColour(triangleVertexColours[targetTriangle.triangleIndex].colours, targetTriangleBarycentricCoordinates);
                         } else if (phong) {
-                            
+                            glm::vec3 interpolatedNormal = getPhongNormal(vertexNormals[targetTriangle.triangleIndex], targetTriangleBarycentricCoordinates);
+                            c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), interpolatedNormal); 
                         } else {
                             c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
                         }
