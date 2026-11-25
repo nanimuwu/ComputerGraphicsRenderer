@@ -61,8 +61,8 @@ IntersectionResult RayTracedRenderer::getClosestIntersection(glm::vec3 startingP
     }
 
     if (!found) {
-        output.targetTriangle =RayTriangleIntersection(glm::vec3(0), -1, ModelTriangle(glm::vec3(0), glm::vec3(0), glm::vec3(0), Colour(0,0,0)), -1);
-        output.barycentric - glm::vec3(-1,-1,-1);
+        output.targetTriangle = RayTriangleIntersection(glm::vec3(0), -1, ModelTriangle(glm::vec3(0), glm::vec3(0), glm::vec3(0), Colour(0,0,0)), -1);
+        output.barycentric = glm::vec3(-1,-1,-1);
     }
     return output;
 }
@@ -84,7 +84,7 @@ Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::v
     return Colour(newRed, newGreen, newBlue);
 }
 
-void updateTriangleVertexInfo(RayTriangleIntersection targetTriangle, glm::vec3 cameraPosition, glm::vec3 lightPosition, std::vector<glm::mat3> &vertexNormals) {
+void RayTracedRenderer::updateTriangleVertexInfo(RayTriangleIntersection &targetTriangle) {
     triangleVertexColours[targetTriangle.triangleIndex].calculated = true;
 
     for (int i = 0; i < 3; i++) {
@@ -108,7 +108,7 @@ glm::vec3 getPhongNormal(glm::mat3 &vertexNormals, glm::vec3 barycentricCoordina
     float u = barycentricCoordinates[1];
     float v = barycentricCoordinates[2];
     float w = 1-u-v;
-    return (w*vertexNormals[0] + u *vertexNormals[1] + v *vertexNormals[2]);
+    return (glm::normalize(w*vertexNormals[0] + u *vertexNormals[1] + v *vertexNormals[2]));
 }
 
 void RayTracedRenderer::draw(DrawingWindow &window) {
@@ -116,6 +116,7 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
 
     switch (currentRendererType) {
         case (RAYTRACED):
+            if (gouraud) triangleVertexColours.assign(triangles.size(), vertexColours());
             for (int y = 0; y < window.height; y++) {
                 for (int x = 0; x < window.width; x++) {
                     float u = (x - window.width  / 2.0f) / imagePlaneScaling;
@@ -140,20 +141,16 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                         Colour c;
 
                         if (gouraud) {
-
-                            triangleVertexColours.clear();
-                            for (int i = 0; i<triangles.size(); i++) {
-                                triangleVertexColours.push_back(vertexColours());
-                            }
-
                             if (!triangleVertexColours[targetTriangle.triangleIndex].calculated){
-                                updateTriangleVertexInfo(targetTriangle, cameraPosition, lightPosition, vertexNormals);
+                                updateTriangleVertexInfo(targetTriangle);
                             } 
 
                             c = getGourardColour(triangleVertexColours[targetTriangle.triangleIndex].colours, targetTriangleBarycentricCoordinates);
+                        
                         } else if (phong) {
                             glm::vec3 interpolatedNormal = getPhongNormal(vertexNormals[targetTriangle.triangleIndex], targetTriangleBarycentricCoordinates);
                             c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), interpolatedNormal); 
+                        
                         } else {
                             c = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), targetTriangle.intersectedTriangle.normal);
                         }

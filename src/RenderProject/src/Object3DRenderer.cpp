@@ -62,10 +62,12 @@ void Object3DRenderer::getVertexNormals() {
             for (int a = 0; a < 3; a++) {
                 for (int b = 0; b < 3; b++) {
                     if (triangles[i].vertices[a] == triangles[j].vertices[b]) {
-                        vertexNormals[i][a] += triangles[j].normal;
-                        counts[i][a]++;
-                        vertexNormals[j][b] += triangles[i].normal;
-                        counts[j][b]++;
+                        if (glm::dot(triangles[i].normal, triangles[j].normal) > 0.3f) {
+                            vertexNormals[i][a] += triangles[j].normal;
+                            counts[i][a]++;
+                            vertexNormals[j][b] += triangles[i].normal;
+                            counts[j][b]++;
+                        }
                     }
                 }
             }
@@ -287,7 +289,8 @@ void Object3DRenderer::drawRasterisedScene(DrawingWindow &window, rendererType r
                 auto targetTexture = textures.find(triangles[i].colour.name);
                 if (targetTexture != textures.end()){
                     TextureMap &map = targetTexture->second;
-                    drawTextureTriangle(window, targetTriangle, map); //FIXME: doesn't account for depths
+                    //drawTextureTriangle(window, targetTriangle, map); //FIXME: doesn't account for depths
+                    drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
                 } else {
                     drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
                 }

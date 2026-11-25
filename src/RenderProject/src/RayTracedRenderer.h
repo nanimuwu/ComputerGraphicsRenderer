@@ -15,4 +15,5 @@ class RayTracedRenderer: public Object3DRenderer {
         void togglePhong();
     private:
         IntersectionResult getClosestIntersection(glm::vec3 startingPoint, glm::vec3 rayDirection);
+        void updateTriangleVertexInfo(RayTriangleIntersection &targetTriangle);
 };

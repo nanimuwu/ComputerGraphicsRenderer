@@ -15,11 +15,11 @@ class Object3DRenderer: public RasterisedRenderer {
       std::vector<glm::mat3> vertexNormals; 
       std::vector<Colour> palette;
       std::map<std::string, TextureMap> textures;
-      glm::vec3 cameraPosition = glm::vec3(0.0, 0.5, 2.0);
+      glm::vec3 cameraPosition = glm::vec3(0.0, 0.0, 4.0);
       float imagePlaneScaling = 160; 
       float focalLength = 2.0;
       glm::mat3 cameraOrientation = glm::mat3({1,0,0}, {0,1,0}, {0,0,1});
-      glm::vec3 lightPosition = glm::vec3(1.5, 1.5, 1.5);
+      glm::vec3 lightPosition = glm::vec3(0.0, 0.8, 0.2);
       glm::vec3 vertical = glm::vec3(0.0 ,1.0 ,0.0);
       glm::vec3 lookAtCentre = glm::vec3(0.0, 0.0, 0.0);
       bool lookAt = false;
