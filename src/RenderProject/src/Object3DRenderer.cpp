@@ -84,8 +84,7 @@ void Object3DRenderer::getVertexNormals() {
     }
 }
 
-void Object3DRenderer::readOBJfile(std::string objPath, float scale, glm::vec3 offset) { //offset unscaled
-	triangles.clear();
+void Object3DRenderer::readOBJfile(std::string objPath, float scale, glm::vec3 offset) { //offset is unscaled
 	std::ifstream obj(objPath);
 	std::ifstream mtl;
 	std::string lineRead;
