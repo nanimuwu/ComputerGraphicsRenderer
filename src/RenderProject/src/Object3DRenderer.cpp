@@ -287,7 +287,7 @@ void Object3DRenderer::drawRasterisedScene(DrawingWindow &window, rendererType r
             if (renderType == RASTERISED) {
                 auto targetTexture = textures.find(triangles[i].colour.name);
                 if (targetTexture != textures.end()){
-                    TextureMap &map = targetTexture->second;
+                    //TextureMap &map = targetTexture->second; //FIXME: doesn't work in general
                     //drawTextureTriangle(window, targetTriangle, map); //FIXME: doesn't account for depths
                     drawFilledTriangle(window, targetTriangle, triangles[i].colour, false, zDepths);
                 } else {
