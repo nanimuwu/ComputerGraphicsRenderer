@@ -32,6 +32,19 @@ void RayTracedRenderer::setRenderType(rendererType renderType) {
     currentRendererType = renderType;
 }
 
+Colour getTexturePixelColour(TexturePoint t0, TexturePoint t1, TexturePoint t2, glm::vec3 barycentricCoordinate, TextureMap &tMap) {
+    u = barycentricCoordinate[1];
+    v = barycentricCoordinate[2];
+    w = 1-u-v;
+    TexturePoint targetPoint = t0*w + t1*u + t2*v;
+    uint32_t rawColour = tMap.pixels[tMap.width*targetPoint.y + targetPoint.x];
+    Colour colour = Colour(
+        (rawColour>>16) & 0xFF,
+        (rawColour>>8) & 0xFF,
+        rawColour & 0xFF,
+    );
+    return colour;
+}
 
 IntersectionResult RayTracedRenderer::getClosestIntersection(glm::vec3 startingPoint, glm::vec3 rayDirection){
     
@@ -131,6 +144,15 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                     
                     //if hit triangle
                     if (targetTriangle.triangleIndex != -1) {
+                        //TODO: add texture checking here
+                        std::array<TexturePoint, 3> tP = &targetTriangle.intersectedTriangle.texturePoints;
+                        const TexturePoint originTexturePoint(0,0);
+                        if (!(tP[0] == originTexturePoint && tP[1] == originTexturePoint && tP[2] == originTexturePoint)) {
+                            auto targetTexture = textures.find(triangles[i].colour.name);
+                            if (targetTexture != textures.end()){
+                                TextureMap &map = targetTexture->second;
+                                targetTriangle.intersectedTriangle.colour = getTexturePixelColour(tP[0], tP[1], tP[2], targetTriangleBarycentricCoordinates, map); 
+                        }
                         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectionPoint;
                         IntersectionResult lightIntersectionResult = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
                         RayTriangleIntersection lightIntersection = lightIntersectionResult.targetTriangle;
