@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 	SDL_Event event;
 	changeRenderer(RASTERISED);
 	loadObj(currentRenderer, "./src/models/textured-cornell-box/textured-cornell-box.obj",0.35, glm::vec3(0));
-	// loadObj(currentRenderer, "./src/models/sphere/sphere.obj",0.35, glm::vec3(-0.5,-1.0,0.5));
+	loadObj(currentRenderer, "./src/models/sphere/sphere.obj",0.35, glm::vec3(-0.5,-1.0,0.5));
 	while (true) {
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(event)) handleEvent(event, window);

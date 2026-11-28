@@ -37,8 +37,8 @@ Colour getTexturePixelColour(TexturePoint t0, TexturePoint t1, TexturePoint t2, 
     float v = barycentricCoordinate[2];
     float w = 1-u-v;
     float targetX = t0.x*w + t1.x*u + t2.x*v;
-    float targetY = t0.y*w + t1.y*u + t2.x*v;
-    uint32_t rawColour = tMap.pixels[tMap.width*targetY + targetX];
+    float targetY = t0.y*w + t1.y*u + t2.y*v;
+    uint32_t rawColour = tMap.pixels[tMap.width*round(tMap.height*targetY) + round(tMap.width*targetX)];
     Colour colour = Colour(
         (rawColour>>16) & 0xFF,
         (rawColour>>8) & 0xFF,
@@ -81,41 +81,41 @@ IntersectionResult RayTracedRenderer::getClosestIntersection(glm::vec3 startingP
     return output;
 }
 
-Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::vec3 cameraDirection, glm::vec3 lightDirection, glm::vec3 normalVector) {
-    float distMult = 1.0f/(pi*distanceToLight*distanceToLight);
-    float aoi = std::max(0.0f, glm::dot(lightDirection, normalVector));
-    float specularSpread = 0.0f;
+// Colour updateColourIntensity(Colour initialColour, float distanceToLight, glm::vec3 cameraDirection, glm::vec3 lightDirection, glm::vec3 normalVector) {
+//     float distMult = 1.0f/(pi*distanceToLight*distanceToLight);
+//     float aoi = std::max(0.0f, glm::dot(lightDirection, normalVector));
+//     float specularSpread = 0.0f;
 
-    if (aoi > 0.0f) {
-        glm::vec3 outgoingLight = lightDirection - 2.0f*normalVector*(glm::dot(lightDirection, normalVector));
-        specularSpread = std::pow(std::max(glm::dot(cameraDirection, outgoingLight), 0.0f), specularPower);
-    }
+//     if (aoi > 0.0f) {
+//         glm::vec3 outgoingLight = lightDirection - 2.0f*normalVector*(glm::dot(lightDirection, normalVector));
+//         specularSpread = std::pow(std::max(glm::dot(cameraDirection, outgoingLight), 0.0f), specularPower);
+//     }
 
-    float mult = std::min(1.0f, lightScalar*distMult*aoi);
-    float newRed = std::min(255.0f, mult*initialColour.red+(255*specularSpread*mult));
-    float newGreen = std::min(255.0f, mult*initialColour.green+(255*specularSpread*mult));
-    float newBlue = std::min(255.0f, mult*initialColour.blue+(255*specularSpread*mult));
-    return Colour(newRed, newGreen, newBlue);
-}
+//     float mult = std::min(1.0f, lightScalar*distMult*aoi);
+//     float newRed = std::min(255.0f, mult*initialColour.red+(255*specularSpread*mult));
+//     float newGreen = std::min(255.0f, mult*initialColour.green+(255*specularSpread*mult));
+//     float newBlue = std::min(255.0f, mult*initialColour.blue+(255*specularSpread*mult));
+//     return Colour(newRed, newGreen, newBlue);
+// }
 
-void RayTracedRenderer::updateTriangleVertexInfo(RayTriangleIntersection &targetTriangle) {
-    triangleVertexColours[targetTriangle.triangleIndex].calculated = true;
+// void RayTracedRenderer::updateTriangleVertexInfo(RayTriangleIntersection &targetTriangle) {
+//     triangleVertexColours[targetTriangle.triangleIndex].calculated = true;
 
-    for (int i = 0; i < 3; i++) {
-        glm::vec3 rayDirection = glm::normalize(targetTriangle.intersectedTriangle.vertices[i] - cameraPosition);
-        glm::vec3 pointToLight = lightPosition - targetTriangle.intersectedTriangle.vertices[i];
-        triangleVertexColours[targetTriangle.triangleIndex].colours[i] = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), vertexNormals[targetTriangle.triangleIndex][i]);
-    }
-}
+//     for (int i = 0; i < 3; i++) {
+//         glm::vec3 rayDirection = glm::normalize(targetTriangle.intersectedTriangle.vertices[i] - cameraPosition);
+//         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectedTriangle.vertices[i];
+//         triangleVertexColours[targetTriangle.triangleIndex].colours[i] = updateColourIntensity(targetTriangle.intersectedTriangle.colour, glm::length(pointToLight), glm::normalize(rayDirection), glm::normalize(pointToLight), vertexNormals[targetTriangle.triangleIndex][i]);
+//     }
+// }
 
-Colour getGourardColour(std::array<Colour, 3> colours, glm::vec3 barycentricCoordinates) {
-    float u = barycentricCoordinates[1];
-    float v = barycentricCoordinates[2];
-    float w = 1-u-v;
-    float r = colours[0].red * w + colours[1].red * u + colours[2].red * v;
-    float g = colours[0].green * w + colours[1].green * u + colours[2].green * v;
-    float b = colours[0].blue * w + colours[1].blue * u + colours[2].blue * v;
-    return Colour(r,g,b);
+// Colour getGourardColour(std::array<Colour, 3> colours, glm::vec3 barycentricCoordinates) {
+//     float u = barycentricCoordinates[1];
+//     float v = barycentricCoordinates[2];
+//     float w = 1-u-v;
+//     float r = colours[0].red * w + colours[1].red * u + colours[2].red * v;
+//     float g = colours[0].green * w + colours[1].green * u + colours[2].green * v;
+//     float b = colours[0].blue * w + colours[1].blue * u + colours[2].blue * v;
+//     return Colour(r,g,b);
 }
 
 glm::vec3 getPhongNormal(glm::mat3 &vertexNormals, glm::vec3 barycentricCoordinates) {
@@ -145,19 +145,19 @@ void RayTracedRenderer::draw(DrawingWindow &window) {
                     
                     //if hit triangle
                     if (targetTriangle.triangleIndex != -1) {
-                        //TODO: add texture checking here
 
                         std::array<TexturePoint, 3> &tP = targetTriangle.intersectedTriangle.texturePoints;
                         const TexturePoint originTexturePoint(0,0);
-                        if (tP[0].x != originTexturePoint.x || tP[0].y != originTexturePoint.y ||
-                            tP[1].x != originTexturePoint.x || tP[1].y != originTexturePoint.y ||
-                            tP[2].x != originTexturePoint.x || tP[2].y != originTexturePoint.y) {
+                        if (!(tP[0].x == originTexturePoint.x && tP[0].y == originTexturePoint.y &&
+                            tP[1].x == originTexturePoint.x && tP[1].y == originTexturePoint.y &&
+                            tP[2].x == originTexturePoint.x && tP[2].y == originTexturePoint.y)) {
                                 auto targetTexture = textures.find(targetTriangle.intersectedTriangle.colour.name);
                                 if (targetTexture != textures.end()){
                                     TextureMap &map = targetTexture->second;
                                     targetTriangle.intersectedTriangle.colour = getTexturePixelColour(tP[0], tP[1], tP[2], targetTriangleBarycentricCoordinates, map); 
                             }
                         }
+
                         glm::vec3 pointToLight = lightPosition - targetTriangle.intersectionPoint;
                         IntersectionResult lightIntersectionResult = getClosestIntersection(targetTriangle.intersectionPoint, glm::normalize(pointToLight));
                         RayTriangleIntersection lightIntersection = lightIntersectionResult.targetTriangle;
